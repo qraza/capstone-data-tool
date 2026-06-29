@@ -1,0 +1,2 @@
+[console_scripts]
+datatool = cli.main:cli

@@ -1,0 +1,7 @@
+pyproject.toml
+capstone_data_tool.egg-info/PKG-INFO
+capstone_data_tool.egg-info/SOURCES.txt
+capstone_data_tool.egg-info/dependency_links.txt
+capstone_data_tool.egg-info/entry_points.txt
+capstone_data_tool.egg-info/requires.txt
+capstone_data_tool.egg-info/top_level.txt
