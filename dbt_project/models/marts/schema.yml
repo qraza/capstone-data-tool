@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: mart_trip_summary
+    description: "Daily trip stats aggregated by pickup zone"
+    columns:
+      - name: trip_date
+        description: "Date of trips"
+        data_tests:
+          - not_null
+      - name: pickup_location_id
+        description: "Pickup zone ID"
+        data_tests:
+          - not_null
+      - name: pickup_zone
+        description: "Pickup zone name"
+      - name: pickup_borough
+        description: "NYC borough"
+      - name: total_trips
+        description: "Number of trips"
+        data_tests:
+          - not_null
+      - name: total_revenue_usd
+        description: "Total revenue"
+        data_tests:
+          - not_null

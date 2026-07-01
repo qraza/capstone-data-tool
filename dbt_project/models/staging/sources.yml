@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: nyc_tlc
+    schema: nyc_tlc
+    description: "NYC TLC Yellow Taxi trip data"
+    tables:
+      - name: yellow_trips
+        description: "Raw yellow taxi trips - January 2024"
+      - name: taxi_zones
+        description: "Taxi zone lookup table"
