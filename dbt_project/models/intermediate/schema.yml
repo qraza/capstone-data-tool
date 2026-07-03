@@ -31,7 +31,22 @@ models:
         description: "Pickup zone name (joined from taxi zone lookup)"
       - name: dropoff_zone
         description: "Dropoff zone name (joined from taxi zone lookup)"
+      - name: pickup_day_of_week
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - "Monday"
+                  - "Tuesday"
+                  - "Wednesday"
+                  - "Thursday"
+                  - "Friday"
+                  - "Saturday"
+                  - "Sunday"
       - name: tip_pct
         description: "Tip amount as a fraction of fare amount"
+        data_tests:
+          - not_null
       - name: avg_speed_mph
-        description: "Trip distance divided by trip duration in minutes"
+        description: "Trip distance divided by trip duration in minutes; null when trip_duration_minutes is 0"
