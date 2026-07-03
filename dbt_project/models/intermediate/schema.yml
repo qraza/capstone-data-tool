@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: int_trips_enriched
+    description: "Trip-grain fact enriched with pickup/dropoff zone info and derived time/business metrics"
+    columns:
+      - name: pickup_location_id
+        data_tests:
+          - not_null
+      - name: trip_date
+        data_tests:
+          - not_null
+      - name: pickup_zone
+        description: "Pickup zone name (joined from taxi zone lookup)"
+      - name: dropoff_zone
+        description: "Dropoff zone name (joined from taxi zone lookup)"
+      - name: tip_pct
+        description: "Tip amount as a fraction of fare amount"
+      - name: avg_speed_mph
+        description: "Trip distance divided by trip duration in minutes"

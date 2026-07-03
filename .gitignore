@@ -1,2 +1,4 @@
 capstone_data_tool.egg-info/
 data/
+__pycache__/
+*.pyc
