@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  datatool:
+    build: .
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DBT_DB_PATH=/app/data/capstone.duckdb
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    command: python -m cli.main summary --date 2024-01-15 --top 5
