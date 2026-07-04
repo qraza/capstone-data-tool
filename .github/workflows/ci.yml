@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DBT_DB_PATH: ${{ github.workspace }}/data/capstone.duckdb
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv pip install --system -e . --group dev || uv pip install --system -e . && uv pip install --system pytest ruff
+
+      - name: Lint with ruff
+        run: ruff check cli/ scripts/
+
+      - name: Load sample data
+        run: |
+          mkdir -p data
+          python scripts/load_raw.py --ci
+
+      - name: dbt build (models + tests)
+        run: |
+          dbt build --project-dir dbt_project --profiles-dir .ci
+        env:
+          DBT_DB_PATH: ${{ github.workspace }}/data/capstone.duckdb
+
+      - name: Run pytest
+        run: pytest tests/ -v --ignore=tests/fixtures

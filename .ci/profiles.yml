@@ -1,0 +1,7 @@
+capstone:
+  target: ci
+  outputs:
+    ci:
+      type: duckdb
+      path: "{{ env_var('DBT_DB_PATH') }}"
+      threads: 4
