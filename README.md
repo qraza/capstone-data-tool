@@ -5,6 +5,7 @@ interfaces: a CLI, a Streamlit dashboard, and an automated PowerPoint deck.
 
 [![CI](https://github.com/qraza/capstone-data-tool/actions/workflows/ci.yml/badge.svg)](https://github.com/qraza/capstone-data-tool/actions/workflows/ci.yml)
 ![Python 3.12](https://img.shields.io/badge/python-3.12-blue)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ## What this is
 
@@ -94,6 +95,10 @@ to hand-write a `~/.dbt/profiles.yml`.
 
 ### Option B — Docker
 
+The image installs the whole project (`cli/`, `dbt_project/`, `scripts/`, `app/`, `reporting/`,
+`.ci/`), so all three interfaces run in the container. Download the two data files as in Option A
+first (into `./data`, which the container mounts), then:
+
 ```bash
 docker compose build
 docker compose run --rm datatool python scripts/load_raw.py
@@ -101,9 +106,44 @@ docker compose run --rm datatool dbt build --project-dir dbt_project --profiles-
 docker compose run --rm datatool python -m cli.main summary --date 2024-01-15 --top 5
 ```
 
-The image only installs `cli/`, `dbt_project/`, and `scripts/` (see `Dockerfile`) — it covers the
-CLI's `summary` and `analyse` commands. `app/` and `reporting/` aren't copied in, so the dashboard
-and the `report` command are local/uv-only for now.
+Board pack — the container writes into `/app/data`, which `docker-compose.yml` mounts to `./data`
+on the host, so the output file lands next to your other data files with no extra flags:
+
+```bash
+docker compose run --rm datatool \
+    python -m cli.main report --month 2024-01 --output /app/data/board_pack.pptx --ai
+# -> ./data/board_pack.pptx on the host
+```
+
+Dashboard — `docker-compose.yml` publishes `8501:8501`, but `docker compose run` only wires up a
+service's ports when you pass `--service-ports`; Streamlit also needs to bind `0.0.0.0` instead of
+its default `localhost` to be reachable from outside the container:
+
+```bash
+docker compose run --rm --service-ports datatool \
+    streamlit run app/dashboard.py --server.address=0.0.0.0 --server.port=8501
+# -> http://localhost:8501
+```
+
+Pass `-e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY` (or set it in a `.env` file next to
+`docker-compose.yml`) to either command to enable the AI features.
+
+Packing in Streamlit, Plotly, python-pptx, and Kaleido to support the dashboard and the report
+command adds roughly 300MB to the image versus a CLI-only build — Kaleido alone bundles a ~220MB
+headless renderer for exporting charts to PNG. That's the cost of one image serving all three
+interfaces instead of a slimmer, CLI-only one.
+
+**I could not build or run this image in this sandbox — Docker isn't installed here.** To verify
+these changes yourself:
+
+```bash
+docker compose build
+docker compose run --rm datatool python scripts/load_raw.py
+docker compose run --rm datatool dbt build --project-dir dbt_project --profiles-dir .ci
+docker compose run --rm datatool python -m cli.main report --month 2024-01 --output /app/data/board_pack.pptx
+docker compose run --rm --service-ports datatool streamlit run app/dashboard.py --server.address=0.0.0.0 --server.port=8501
+# then open http://localhost:8501 and confirm the dashboard loads
+```
 
 ### The three interfaces
 

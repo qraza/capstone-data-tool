@@ -18,6 +18,8 @@ description, architecture, and quickstart — this file is process notes, not a 
 ## Roadmap
 
 - [x] Root `README.md`
+- [x] MIT `LICENSE`
+- [x] Dockerfile/docker-compose cover the full project (dashboard + report command, not just the CLI)
 - [ ] MotherDuck (or other hosted DuckDB) deployment for the dashboard, so it's not local-only
 - [ ] Give `mart_hourly_patterns` a month grain (currently aggregates the full dataset regardless
       of the month a board pack is generated for)
