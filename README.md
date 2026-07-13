@@ -171,9 +171,7 @@ Four tabs: Explorer (filter + ask Claude), Executive Overview (month KPIs, trend
 pack download), Operational Insights (hourly heatmap, airport split, tip patterns), AI Analyst
 (free-text Q&A). See `app/README.md` for details.
 
-<!-- TODO: screenshot — run `streamlit run app/dashboard.py`, open the Executive Overview tab,
-     wait for the KPI tiles and both charts to render, then save a full-window screenshot to
-     docs/dashboard-executive-overview.png -->
+![Dashboard — Executive Overview](docs/dashboard-executive-overview.png)
 
 **Board pack (PowerPoint)**
 
