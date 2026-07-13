@@ -126,5 +126,25 @@ def analyse(date, borough, top):
     analysis = analyse_trips(data, date, borough)
     console.print(analysis)
 
+@cli.command()
+@click.option("--month", default="2024-01", help="Month to report on (YYYY-MM)")
+@click.option("--output", "output_path", default="report.pptx", help="Output .pptx file path")
+@click.option("--ai", is_flag=True, default=False, help="Include AI-generated key insights")
+def report(month, output_path, ai):
+    """Generate a monthly board-pack PowerPoint deck from the marts."""
+    from reporting.deck_builder import build_deck
+
+    console.print(f"[bold]Building board pack for {month}...[/bold]")
+
+    try:
+        deck = build_deck(DB_PATH, month=month, include_ai_commentary=ai)
+    except (FileNotFoundError, RuntimeError, ValueError) as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    with open(output_path, "wb") as f:
+        f.write(deck.getvalue())
+
+    console.print(f"[green]Board pack written to {output_path}[/green]")
+
 if __name__ == "__main__":
     cli()

@@ -26,10 +26,14 @@ jobs:
         uses: astral-sh/setup-uv@v4
 
       - name: Install dependencies
+        # kaleido is pinned to 0.2.1 (pre-Chrome rewrite): it bundles its own
+        # headless renderer and shared libs, so no extra system packages are
+        # needed for plotly -> PNG export in CI. Verified locally on a bare
+        # Ubuntu container with none of libnss3/libnspr4 etc. preinstalled.
         run: uv pip install --system -e . --group dev
 
       - name: Lint with ruff
-        run: ruff check cli/ scripts/
+        run: ruff check cli/ scripts/ reporting/
 
       - name: Load sample data
         run: |

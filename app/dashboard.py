@@ -6,16 +6,15 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from plotly.subplots import make_subplots
 
 from cli.llm import analyse_trips, call_claude
+from reporting.deck_builder import build_deck
+from reporting.figures import DAY_ORDER, build_daily_trend_fig, build_hourly_heatmap_fig, build_top_zones_fig
 
 DB_PATH = os.environ.get(
     "DBT_DB_PATH",
     os.path.expanduser("~/development/capstone-data-tool/data/capstone.duckdb")
 )
-
-DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
 def get_conn():
@@ -256,37 +255,13 @@ def render_executive_overview():
     c4.metric("Avg duration", f"{kpis['avg_duration_minutes']:.1f} min")
 
     daily = load_daily_kpis()
-
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(
-        go.Bar(x=daily["trip_date"], y=daily["total_trips"], name="Trips", marker_color="#4C78A8"),
-        secondary_y=False,
-    )
-    fig.add_trace(
-        go.Scatter(x=daily["trip_date"], y=daily["total_revenue_usd"], name="Revenue (USD)",
-                   marker_color="#F58518", mode="lines+markers"),
-        secondary_y=True,
-    )
-    fig.update_layout(title="Daily trips and revenue", legend=dict(orientation="h", y=1.1))
-    fig.update_xaxes(title_text="Date")
-    fig.update_yaxes(title_text="Trips", secondary_y=False, tickformat=",")
-    fig.update_yaxes(title_text="Revenue (USD)", secondary_y=True, tickformat="$,.0f")
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(build_daily_trend_fig(daily), width="stretch")
 
     col1, col2 = st.columns(2)
 
     with col1:
         top_zones = load_top_zones_by_revenue(10)
-        fig_zones = px.bar(
-            top_zones.sort_values("total_revenue_usd"),
-            x="total_revenue_usd",
-            y="pickup_zone",
-            orientation="h",
-            title="Top 10 zones by revenue",
-            labels={"total_revenue_usd": "Revenue (USD)", "pickup_zone": "Pickup zone"},
-        )
-        fig_zones.update_xaxes(tickformat="$,.0f")
-        st.plotly_chart(fig_zones, width="stretch")
+        st.plotly_chart(build_top_zones_fig(top_zones), width="stretch")
 
     with col2:
         borough_rev = load_borough_revenue()
@@ -300,22 +275,32 @@ def render_executive_overview():
         fig_donut.update_traces(textinfo="label+percent")
         st.plotly_chart(fig_donut, width="stretch")
 
+    st.divider()
+    st.subheader("Board pack export")
+    include_ai = st.checkbox("Include AI commentary", value=False)
+    if st.button("📥 Download board pack (PPTX)"):
+        if include_ai and not has_api_key():
+            show_api_key_notice()
+        else:
+            month = pd.to_datetime(daily["trip_date"]).dt.strftime("%Y-%m").iloc[0]
+            try:
+                with st.spinner("Building deck..."):
+                    deck = build_deck(DB_PATH, month=month, include_ai_commentary=include_ai)
+                st.download_button(
+                    "Save PPTX",
+                    data=deck,
+                    file_name=f"nyc_taxi_board_pack_{month}.pptx",
+                    mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                )
+            except Exception as exc:
+                st.error(f"Deck generation failed: {exc}")
+
 
 def render_operational_insights():
     hourly = load_hourly_patterns()
 
     st.subheader("Trip volume by day of week and hour")
-    pivot = hourly.pivot(index="pickup_day_of_week", columns="pickup_hour", values="total_trips")
-    pivot = pivot.reindex(DAY_ORDER)
-    fig_heatmap = px.imshow(
-        pivot,
-        labels=dict(x="Hour of day", y="Day of week", color="Trips"),
-        color_continuous_scale="Blues",
-        aspect="auto",
-        title="Trips by day of week x pickup hour",
-    )
-    fig_heatmap.update_xaxes(dtick=1)
-    st.plotly_chart(fig_heatmap, width="stretch")
+    st.plotly_chart(build_hourly_heatmap_fig(hourly), width="stretch")
 
     col1, col2 = st.columns(2)
 
