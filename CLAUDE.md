@@ -25,3 +25,7 @@ description, architecture, and quickstart — this file is process notes, not a 
       of the month a board pack is generated for)
 - [ ] Cloud ingestion layer — `scripts/load_raw.py` is source-pluggable; pointing DuckDB's
       `read_parquet` at an `s3://` path is the natural next step
+- [ ] Refactor hardcoded `~/development/capstone-data-tool` absolute paths (`cli/main.py`,
+      `app/dashboard.py`, `scripts/load_raw.py`, dbt profile) to derive from the project root —
+      improves portability for anyone cloning to a different location, and unblocks renaming the
+      local folder
