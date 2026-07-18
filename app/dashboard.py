@@ -6,10 +6,13 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+from dotenv import load_dotenv
 
 from cli.llm import analyse_trips, call_claude
 from reporting.deck_builder import build_deck
 from reporting.figures import DAY_ORDER, build_daily_trend_fig, build_hourly_heatmap_fig, build_top_zones_fig
+
+load_dotenv()
 
 DB_PATH = os.environ.get(
     "DBT_DB_PATH",

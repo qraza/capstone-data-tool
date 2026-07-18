@@ -13,6 +13,7 @@ dependencies = [
     "plotly>=5.24",
     "python-pptx>=1.0.2",
     "kaleido==0.2.1",
+    "python-dotenv>=1.0",
 ]
 
 [project.scripts]
@@ -30,4 +31,4 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["cli*", "reporting*"]
+include = ["cli*", "reporting*", "scripts*"]
