@@ -20,7 +20,10 @@ def test_build_deck_returns_valid_pptx():
 
 def test_build_deck_slide_count_same_with_ai_commentary(monkeypatch):
     """AI commentary adds a section to the existing summary slide, not a new slide."""
-    monkeypatch.setattr("cli.llm.call_claude", lambda prompt, max_tokens=300: "- insight one\n- insight two")
+    monkeypatch.setattr(
+        "cli.llm.call_claude",
+        lambda prompt, max_tokens=300, api_key=None: "- insight one\n- insight two",
+    )
 
     buf = build_deck(DB_PATH, month=MONTH, include_ai_commentary=True, api_key="fake-key")
     prs = Presentation(buf)

@@ -1,20 +1,20 @@
 import httpx
 import os
 
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 API_URL = "https://api.anthropic.com/v1/messages"
 
 
-def call_claude(prompt: str, max_tokens: int = 500) -> str:
+def call_claude(prompt: str, max_tokens: int = 500, api_key: str | None = None) -> str:
     """Send a single-turn prompt to Claude and return the text response."""
 
-    if not ANTHROPIC_API_KEY:
+    key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+    if not key:
         raise ValueError("ANTHROPIC_API_KEY environment variable not set")
 
     response = httpx.post(
         API_URL,
         headers={
-            "x-api-key": ANTHROPIC_API_KEY,
+            "x-api-key": key,
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
         },
@@ -30,7 +30,9 @@ def call_claude(prompt: str, max_tokens: int = 500) -> str:
     return response.json()["content"][0]["text"]
 
 
-def analyse_trips(data: list[dict], date: str, borough: str | None) -> str:
+def analyse_trips(
+    data: list[dict], date: str, borough: str | None, api_key: str | None = None
+) -> str:
     """Send trip summary data to Claude for analysis."""
 
     # Format data as a readable table for the prompt
@@ -55,4 +57,4 @@ Provide a concise analysis (3-5 sentences) covering:
 - One actionable insight for taxi operators or city planners
 """
 
-    return call_claude(prompt)
+    return call_claude(prompt, api_key=api_key)

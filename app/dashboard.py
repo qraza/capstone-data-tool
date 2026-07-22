@@ -22,14 +22,16 @@ from reporting.figures import (
 
 load_dotenv()
 
-DB_PATH = os.environ.get(
-    "DBT_DB_PATH",
-    os.path.expanduser("~/development/capstone-data-tool/data/capstone.duckdb")
-)
+
+def get_db_path() -> str:
+    return os.environ.get(
+        "DBT_DB_PATH",
+        os.path.expanduser("~/development/capstone-data-tool/data/capstone.duckdb")
+    )
 
 
 def get_conn():
-    return duckdb.connect(DB_PATH, read_only=True)
+    return duckdb.connect(get_db_path(), read_only=True)
 
 
 def has_api_key() -> bool:
@@ -348,7 +350,7 @@ def render_executive_overview():
             month = pd.to_datetime(daily["trip_date"]).dt.strftime("%Y-%m").iloc[0]
             try:
                 with st.spinner("Building deck..."):
-                    deck = build_deck(DB_PATH, month=month, include_ai_commentary=include_ai)
+                    deck = build_deck(get_db_path(), month=month, include_ai_commentary=include_ai)
                 st.download_button(
                     "Save PPTX",
                     data=deck,

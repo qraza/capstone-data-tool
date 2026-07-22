@@ -125,16 +125,10 @@ def _generate_insights(
         "no closing remarks."
     )
 
-    # Temporarily override the shared helper's module-level key so an explicit
-    # api_key argument takes precedence over the environment for this call.
-    original_key = llm.ANTHROPIC_API_KEY
-    llm.ANTHROPIC_API_KEY = effective_key
     try:
-        text = llm.call_claude(prompt, max_tokens=300)
+        text = llm.call_claude(prompt, max_tokens=300, api_key=effective_key)
     except Exception:
         return None
-    finally:
-        llm.ANTHROPIC_API_KEY = original_key
 
     bullets = [
         line.lstrip("-• ").strip()

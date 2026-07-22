@@ -6,10 +6,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DB_PATH = os.environ.get(
-    "DBT_DB_PATH",
-    os.path.expanduser("~/development/capstone-data-tool/data/capstone.duckdb"),
-)
+def get_db_path() -> str:
+    return os.environ.get(
+        "DBT_DB_PATH",
+        os.path.expanduser("~/development/capstone-data-tool/data/capstone.duckdb"),
+    )
 
 LOCAL_DATA_DIR = os.path.expanduser("~/development/capstone-data-tool/data")
 CI_DATA_DIR = "tests/fixtures"
@@ -95,7 +96,7 @@ def load_azure(conn):
 )
 def main(source: str):
     """Load raw NYC TLC trip data + zone lookup into DuckDB."""
-    conn = duckdb.connect(DB_PATH)
+    conn = duckdb.connect(get_db_path())
     conn.execute("CREATE SCHEMA IF NOT EXISTS nyc_tlc")
 
     if source == "azure":

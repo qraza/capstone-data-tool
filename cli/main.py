@@ -9,13 +9,14 @@ load_dotenv()
 
 console = Console()
 
-DB_PATH = os.environ.get(
-    "DBT_DB_PATH",
-    os.path.expanduser("~/development/capstone-data-tool/data/capstone.duckdb")
-)
+def get_db_path() -> str:
+    return os.environ.get(
+        "DBT_DB_PATH",
+        os.path.expanduser("~/development/capstone-data-tool/data/capstone.duckdb")
+    )
 
 def get_conn():
-    return duckdb.connect(DB_PATH, read_only=True)
+    return duckdb.connect(get_db_path(), read_only=True)
 
 @click.group()
 def cli():
@@ -140,7 +141,7 @@ def report(month, output_path, ai):
     console.print(f"[bold]Building board pack for {month}...[/bold]")
 
     try:
-        deck = build_deck(DB_PATH, month=month, include_ai_commentary=ai)
+        deck = build_deck(get_db_path(), month=month, include_ai_commentary=ai)
     except (FileNotFoundError, RuntimeError, ValueError) as exc:
         raise click.ClickException(str(exc)) from exc
 
