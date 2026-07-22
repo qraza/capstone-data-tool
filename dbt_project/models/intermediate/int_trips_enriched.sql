@@ -29,6 +29,16 @@ select
     t.trip_duration_minutes,
     t.passenger_count,
 
+    -- payment
+    t.payment_type,
+    case t.payment_type
+        when 1 then 'Credit card'
+        when 2 then 'Cash'
+        when 3 then 'No charge'
+        when 4 then 'Dispute'
+        else 'Unknown'
+    end as payment_method,
+
     -- financial facts + derived business metrics
     t.fare_amount,
     t.tip_amount,

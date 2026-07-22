@@ -85,6 +85,46 @@ models:
         data_tests:
           - not_null
 
+  - name: mart_payment_mix
+    description: "Payment method mix and average tip, aggregated by pickup borough and pickup hour"
+    columns:
+      - name: pickup_borough
+        description: "NYC borough"
+        data_tests:
+          - not_null
+      - name: payment_method
+        description: "Human-readable payment method"
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - "Credit card"
+                  - "Cash"
+                  - "No charge"
+                  - "Dispute"
+                  - "Unknown"
+      - name: pickup_hour
+        description: "Hour of day of pickup (0-23)"
+        data_tests:
+          - not_null
+      - name: total_trips
+        description: "Number of trips in this borough/payment method/hour bucket"
+        data_tests:
+          - not_null
+      - name: avg_tip_usd
+        description: "Average tip amount"
+        data_tests:
+          - not_null
+      - name: avg_tip_pct
+        description: "Average tip amount as a fraction of fare amount"
+        data_tests:
+          - not_null
+      - name: payment_share
+        description: "Share of trips using this payment method within the borough/hour bucket (0-1)"
+        data_tests:
+          - not_null
+
   - name: mart_hourly_patterns
     description: "Trip patterns aggregated by month, day of week, and pickup hour"
     columns:

@@ -59,3 +59,63 @@ def build_hourly_heatmap_fig(
     )
     fig.update_xaxes(dtick=1)
     return fig
+
+
+def build_payment_mix_by_borough_fig(
+    payment_mix: pd.DataFrame, title: str = "Payment mix by borough"
+) -> go.Figure:
+    fig = px.bar(
+        payment_mix,
+        x="pickup_borough",
+        y="trip_share",
+        color="payment_method",
+        barmode="stack",
+        title=title,
+        labels={
+            "trip_share": "Share of trips",
+            "pickup_borough": "Borough",
+            "payment_method": "Payment method",
+        },
+    )
+    fig.update_yaxes(tickformat=".0%")
+    return fig
+
+
+def build_avg_tip_by_payment_method_fig(
+    payment_mix: pd.DataFrame, title: str = "Average tip by payment method"
+) -> go.Figure:
+    fig = px.bar(
+        payment_mix,
+        x="payment_method",
+        y="avg_tip_usd",
+        color="pickup_borough",
+        barmode="group",
+        title=title,
+        labels={
+            "avg_tip_usd": "Avg tip (USD)",
+            "payment_method": "Payment method",
+            "pickup_borough": "Borough",
+        },
+    )
+    fig.update_yaxes(tickformat="$.2f")
+    return fig
+
+
+def build_payment_split_by_hour_fig(
+    hourly_mix: pd.DataFrame, title: str = "Payment mix by hour of day"
+) -> go.Figure:
+    fig = px.line(
+        hourly_mix.sort_values("pickup_hour"),
+        x="pickup_hour",
+        y="trip_share",
+        color="payment_method",
+        title=title,
+        labels={
+            "pickup_hour": "Hour of day",
+            "trip_share": "Share of trips",
+            "payment_method": "Payment method",
+        },
+    )
+    fig.update_yaxes(tickformat=".0%")
+    fig.update_xaxes(dtick=1)
+    return fig
