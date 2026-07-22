@@ -31,6 +31,24 @@ models:
         description: "Pickup zone name (joined from taxi zone lookup)"
       - name: dropoff_zone
         description: "Dropoff zone name (joined from taxi zone lookup)"
+      - name: payment_type
+        description: "Raw TLC payment type code"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1, 2, 3, 4]
+      - name: payment_method
+        description: "Human-readable payment method derived from payment_type"
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - "Credit card"
+                  - "Cash"
+                  - "No charge"
+                  - "Dispute"
+                  - "Unknown"
       - name: pickup_day_of_week
         data_tests:
           - not_null

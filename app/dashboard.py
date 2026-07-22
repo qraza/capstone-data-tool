@@ -10,7 +10,15 @@ from dotenv import load_dotenv
 
 from cli.llm import analyse_trips, call_claude
 from reporting.deck_builder import build_deck
-from reporting.figures import DAY_ORDER, build_daily_trend_fig, build_hourly_heatmap_fig, build_top_zones_fig
+from reporting.figures import (
+    DAY_ORDER,
+    build_avg_tip_by_payment_method_fig,
+    build_daily_trend_fig,
+    build_hourly_heatmap_fig,
+    build_payment_mix_by_borough_fig,
+    build_payment_split_by_hour_fig,
+    build_top_zones_fig,
+)
 
 load_dotenv()
 
@@ -185,6 +193,47 @@ def load_airport_split() -> pd.DataFrame:
     return df
 
 
+@st.cache_data
+def load_payment_mix_by_borough() -> pd.DataFrame:
+    conn = get_conn()
+    df = conn.execute(
+        """
+        SELECT
+            pickup_borough,
+            payment_method,
+            sum(total_trips)                                  as total_trips,
+            sum(avg_tip_usd * total_trips) / sum(total_trips) as avg_tip_usd
+        FROM main.mart_payment_mix
+        GROUP BY 1, 2
+        """
+    ).df()
+    conn.close()
+    df["trip_share"] = df["total_trips"] / df.groupby("pickup_borough")["total_trips"].transform("sum")
+    return df
+
+
+@st.cache_data
+def load_payment_mix_by_hour(borough: str | None = None) -> pd.DataFrame:
+    conn = get_conn()
+    borough_filter = "WHERE pickup_borough = ?" if borough else ""
+    params = [borough] if borough else []
+    df = conn.execute(
+        f"""
+        SELECT
+            pickup_hour,
+            payment_method,
+            sum(total_trips) as total_trips
+        FROM main.mart_payment_mix
+        {borough_filter}
+        GROUP BY 1, 2
+        """,
+        params,
+    ).df()
+    conn.close()
+    df["trip_share"] = df["total_trips"] / df.groupby("pickup_hour")["total_trips"].transform("sum")
+    return df
+
+
 # ---------------------------------------------------------------------------
 # Tabs
 # ---------------------------------------------------------------------------
@@ -347,6 +396,23 @@ def render_operational_insights():
         st.plotly_chart(fig_tips, width="stretch")
 
 
+def render_payment_analysis():
+    borough_mix = load_payment_mix_by_borough()
+
+    st.subheader("Payment mix by borough")
+    st.plotly_chart(build_payment_mix_by_borough_fig(borough_mix), width="stretch")
+
+    st.subheader("Average tip by payment method")
+    st.plotly_chart(build_avg_tip_by_payment_method_fig(borough_mix), width="stretch")
+
+    st.subheader("How the payment split changes across the day")
+    boroughs = sorted(borough_mix["pickup_borough"].unique())
+    selected_borough = st.selectbox("Borough", options=["All boroughs", *boroughs])
+    borough_filter = None if selected_borough == "All boroughs" else selected_borough
+    hourly_mix = load_payment_mix_by_hour(borough_filter)
+    st.plotly_chart(build_payment_split_by_hour_fig(hourly_mix), width="stretch")
+
+
 def build_ai_analyst_prompt(question: str) -> str:
     kpis = load_month_kpis().iloc[0]
     top_zones = load_top_zones_by_revenue(5)
@@ -397,8 +463,8 @@ def main():
     st.set_page_config(page_title="NYC Taxi Data Tool", layout="wide")
     st.title("NYC Yellow Taxi — Data Tool")
 
-    tab_explorer, tab_exec, tab_ops, tab_ai = st.tabs(
-        ["Explorer", "Executive Overview", "Operational Insights", "AI Analyst"]
+    tab_explorer, tab_exec, tab_ops, tab_payment, tab_ai = st.tabs(
+        ["Explorer", "Executive Overview", "Operational Insights", "Payment Analysis", "AI Analyst"]
     )
 
     with tab_explorer:
@@ -407,6 +473,8 @@ def main():
         render_executive_overview()
     with tab_ops:
         render_operational_insights()
+    with tab_payment:
+        render_payment_analysis()
     with tab_ai:
         render_ai_analyst()
 
