@@ -71,8 +71,8 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: ${{ steps.build_prompt.outputs.prompt }}
           claude_args: |
-            --max-turns 40
-            --allowedTools "Bash(git:*),Bash(gh:*),Bash(uv:*),Bash(python:*),Bash(pytest:*),Bash(ruff:*),Bash(dbt:*),Edit,Write,Read,Glob,Grep"
+            --max-turns 80
+            --allowedTools "Bash(git:*),Bash(gh:*),Bash(uv:*),Bash(python:*),Bash(pytest:*),Bash(ruff:*),Bash(dbt:*),Bash(ls:*),Bash(cat:*),Bash(mkdir:*),Bash(cd:*),Bash(mv:*),Bash(cp:*),Bash(find:*),Bash(head:*),Bash(tail:*),Bash(grep:*),Bash(wc:*),Bash(echo:*),Bash(source:*),Bash(export:*),Edit,Write,Read,Glob,Grep,TodoWrite"
             --disallowedTools "Edit(.github/workflows/**),Write(.github/workflows/**),Edit(.env*),Write(.env*),Edit(.ci/**),Write(.ci/**)"
 
       - name: Find resulting PR
