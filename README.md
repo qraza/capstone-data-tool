@@ -11,7 +11,7 @@ interfaces: a CLI, a Streamlit dashboard, and an automated PowerPoint deck.
 
 A portfolio project built to demonstrate a full analytics engineering stack end to end, not just
 one layer of it. NYC TLC's public Yellow Taxi trip records are loaded into DuckDB, modelled through
-a three-layer dbt project (staging → intermediate → marts), and covered by 71 dbt tests and 14
+a three-layer dbt project (staging → intermediate → marts), and covered by 85 dbt tests and 39
 pytest tests that run in CI on every push. The marts are then consumed three ways: a Rich-formatted
 CLI for quick lookups, a multi-tab Streamlit dashboard for interactive exploration, and a
 `reporting/` module that builds a monthly board-pack PowerPoint deck — shared by both the CLI and
@@ -37,12 +37,13 @@ data/taxi_zone_lookup.csv ────────────┤
            stg_yellow_trips    int_trips_enriched      mart_trip_summary
            stg_taxi_zones                              mart_daily_kpis
                                                          mart_hourly_patterns
+                                                         mart_payment_mix
                                        │
                     ┌──────────────────┼───────────────────┐
                     ▼                  ▼                    ▼
               cli/main.py      app/dashboard.py     reporting/deck_builder.py
            (summary, analyse,   (Streamlit,           (build_deck(), called by
-            report commands)    4 tabs)                cli/main.py and the
+            report commands)    5 tabs)                cli/main.py and the
                     │                  │                dashboard's export button)
                     └────────┬─────────┘                       │
                              ▼                                 │
@@ -167,8 +168,9 @@ $ python -m cli.main summary --date 2024-01-15 --top 3
 streamlit run app/dashboard.py
 ```
 
-Four tabs: Explorer (filter + ask Claude), Executive Overview (month KPIs, trend, top zones, board
-pack download), Operational Insights (hourly heatmap, airport split, tip patterns), AI Analyst
+Five tabs: Explorer (filter + ask Claude), Executive Overview (month KPIs, trend, top zones, board
+pack download), Operational Insights (hourly heatmap, airport split, tip patterns), Payment Analysis
+(payment mix by borough, average tip by payment method, payment split across the day), AI Analyst
 (free-text Q&A). See `app/README.md` for details.
 
 ![Dashboard — Executive Overview](docs/dashboard-executive-overview.png)
@@ -285,11 +287,14 @@ tests can't express — for example:
 - `assert_mart_trip_summary_revenue_reconciles.sql` — fails if `mart_trip_summary`'s total revenue
   drifts from `int_trips_enriched`'s by more than a cent per group.
 - `assert_mart_trip_summary_unique_grain.sql` / `assert_mart_daily_kpis_unique_grain.sql` /
-  `assert_mart_hourly_patterns_unique_grain.sql` — each mart's declared grain actually holds.
+  `assert_mart_hourly_patterns_unique_grain.sql` / `assert_mart_payment_mix_unique_grain.sql` — each
+  mart's declared grain actually holds.
 - `assert_int_trips_enriched_no_fanout.sql` — the zone joins in the intermediate layer don't
   inflate or drop rows.
+- `assert_mart_payment_mix_share_sums_to_one.sql` — `payment_share` across payment methods sums to
+  1 (within rounding tolerance) for every borough/hour bucket.
 
-71 dbt tests + 14 pytest tests run on every push (`dbt build`, then `pytest tests/`).
+85 dbt tests + 39 pytest tests run on every push (`dbt build`, then `pytest tests/`).
 
 **The speed-units bug.** `avg_speed_mph` was originally computed as
 `trip_distance / trip_duration_minutes` — miles per *minute*, not per hour, so every value read 60x
@@ -303,8 +308,9 @@ takeaway: a unit bug and a naive bound had been quietly hiding bad data, and onl
 around the fix surfaced it.
 
 Pytest (`tests/`) covers CLI behaviour (`test_cli.py`), deck generation (`test_deck_builder.py`),
-and the LLM helper with the API mocked out (`test_llm.py`) — no application logic is left untested
-by dbt's data checks.
+the LLM helper with the API mocked out (`test_llm.py`), raw ingestion (`test_load_raw.py`), and the
+Jira client's ADF handling and prompt-building logic with the Jira API mocked out
+(`test_jira_client.py`) — no application logic is left untested by dbt's data checks.
 
 CI (`.github/workflows/ci.yml`) needs no cloud credentials and no full dataset: it loads
 `tests/fixtures/sample_trips.parquet` (a small committed fixture, via `load_raw.py --source ci`) into a
@@ -349,9 +355,10 @@ instead of persisting a table nobody reads directly.
 
 **Why marts are purpose-built per consumer**, not one wide table. `mart_trip_summary` is
 trip_date × pickup_zone grain for the Explorer tab's drill-down; `mart_daily_kpis` is trip_date grain
-for month-level trend lines; `mart_hourly_patterns` is day-of-week × hour grain for demand-pattern
-analysis and doesn't carry a date at all. Each is sized and shaped for what queries it, rather than
-forcing every consumer to re-aggregate a single fact table.
+for month-level trend lines; `mart_hourly_patterns` is month × day-of-week × hour grain for
+demand-pattern analysis; `mart_payment_mix` is pickup_borough × payment_method × pickup_hour grain
+for the Payment Analysis tab. Each is sized and shaped for what queries it, rather than forcing
+every consumer to re-aggregate a single fact table.
 
 **The report-factory pattern.** `reporting/deck_builder.py` has no Streamlit import and takes a
 plain `(db_path, month, ...)` signature, so it's callable from the CLI's `report` command, the
@@ -362,8 +369,6 @@ deck's charts are pixel-consistent.
 **Known limitations, stated plainly:**
 - Only January 2024 is loaded — `stg_yellow_trips` hard-filters to that month by design, to keep the
   portfolio dataset small and predictable rather than because of a scaling limit.
-- `mart_hourly_patterns` has no month grain — it aggregates the full dataset, so a board pack for any
-  month currently shows the same demand heatmap. A month column would be a small, mechanical fix.
 - The `azure` ingestion mode (see [Ingestion modes](#ingestion-modes)) reads a fixed pair of blob
   names from a single container — no manifest or multi-file glob yet, so a differently-organized
   container needs a small code change, not just new env vars.
@@ -378,10 +383,10 @@ dbt_project/
   models/
     staging/            1:1 cleaned views over the raw source tables
     intermediate/        ephemeral enrichment layer (zone joins, derived metrics)
-    marts/               mart_trip_summary, mart_daily_kpis, mart_hourly_patterns
+    marts/               mart_trip_summary, mart_daily_kpis, mart_hourly_patterns, mart_payment_mix
   tests/                singular (assert_*.sql) data tests
 app/
-  dashboard.py         4-tab Streamlit app
+  dashboard.py         5-tab Streamlit app
 reporting/
   figures.py            shared plotly figure builders
   deck_builder.py       build_deck() — standalone PowerPoint generator

@@ -38,7 +38,7 @@ description, architecture, and quickstart — this file is process notes, not a 
 - [x] MIT `LICENSE`
 - [x] Dockerfile/docker-compose cover the full project (dashboard + report command, not just the CLI)
 - [ ] MotherDuck (or other hosted DuckDB) deployment for the dashboard, so it's not local-only
-- [ ] Give `mart_hourly_patterns` a month grain (currently aggregates the full dataset regardless
+- [x] Give `mart_hourly_patterns` a month grain (previously aggregated the full dataset regardless
       of the month a board pack is generated for)
 - [x] Cloud ingestion layer — `scripts/load_raw.py --source azure` reads the raw parquet + zone CSV
       directly from a private Azure Blob container via DuckDB's `azure` extension, no local
